@@ -433,12 +433,7 @@ class Camera(BaseCamera):
 				try:  
 					img = cvt.elementDraw(img) 
 				except: 
-					pass 
-
-			cv2.imshow('camera', img) 
+					pass  
 
 			# encode as a jpeg image and return it 
 			yield cv2.imencode('.jpg', img)[1].tobytes() 
-			
-			camera.release() 
-			cv2.destroyAllWindows()
