@@ -1,21 +1,20 @@
 import os
-import cv2 
-import time 
-import numpy as np  
-import move 
-import SpiderG
-SpiderG.move_init()  
+import cv2  
+import numpy as np 
+import move     
+import Kalman_filter  
+import SpiderG  
+
+SpiderG.move_init()   
 from base_camera import BaseCamera 
 from camera_opencv import CVThread
-from camera_opencv import Camera  
+from camera_opencv import Camera   
  
-CVRun = 1
 linePos_1 = 440
 linePos_2 = 380
 lineColorSet = 0	# 255 for white line and 0 for black line 
-frameRender = 1
-findLineError = 20	# How far off it is from the center coordinate when tracking for a line		
-setCenter = 320		# Set center coordinate when tracking for a line 
+findLineError = 10 
+setCenter = 320		
 
 colorUpper = np.array([44, 255, 255])
 colorLower = np.array([24, 100, 100])
@@ -23,18 +22,10 @@ colorLower = np.array([24, 100, 100])
 # Video capture initialization
 vid = cv2.VideoCapture(Camera.video_source)
 
-# Initialization of Steady Camera Mode 
-SpiderG.move_init()
-SpiderG.steadyModeOn()
-
 while(True):
      	
 	# Capture the video frame by frame
-	ret, frame = vid.read()  
-
-	# if we are viewing a video and did not grab a frame, we have reached the end 
-	if frame is None: 
-		break    
+	ret, frame = vid.read()      
 		
 	frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
 	retval, thresh = cv2.threshold(frame_gray, 0, 250, cv2.THRESH_OTSU) 
@@ -75,12 +66,12 @@ while(True):
 		# Displays current line color that robot is tracking:  
 		#-------------------------------------------------------#
 
-		if lineColorSet == 255:  
-			cv2.putText(frame,('Following White Line'),(30,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128),1,cv2.LINE_AA) 
-		elif lineColorSet == 0: 
-			cv2.putText(frame,('Following Black Line'),(30,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128),1,cv2.LINE_AA)		 
-		else: 
-			cv2.putText(frame,('No Line Detected'),(30,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128),1,cv2.LINE_AA)
+		#if lineColorSet == 255:  
+			#cv2.putText(frame,('Following White Line'),(30,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128),1,cv2.LINE_AA) 
+		#elif lineColorSet == 0: 
+			#cv2.putText(frame,('Following Black Line'),(30,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128),1,cv2.LINE_AA)		 
+		#else: 
+			#cv2.putText(frame,('No Line Detected'),(30,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128),1,cv2.LINE_AA)
 
 		#------------------------------------------------------------------------------------------#
 		# Track line by analyzing two pixels in parallel and utilizes the information it detects  
@@ -97,19 +88,8 @@ while(True):
 		cv2.line(frame,(0,linePos_2),(640,linePos_2),(255,255,64),1)
 		
 		# Forms a slope that connects the center coordinate for both the orange and blue vertical line
-
- 	 	#------------------------------------------------------------------------------------# 
-		# Notes:  
-
-		# Center Coordinate for orange vertical line (bottom line): (left_Pos1, linePos_1)   
-		# Center Coordinate for orange vertical line (top line): (left_Pos2, linePos_2) 
-
-		# Center Coordinate for blue vertical line (bottom line): (right_Pos1, linePos_1)  
-		# Center Coordinate for blue vertical line (top line): (right_Pos1, linePos_2)
-		#------------------------------------------------------------------------------------#	 
-
-		cv2.line(frame,(left_Pos1,linePos_1),(left_Pos2, linePos_2),(9,5,2),1)  
-		cv2.line(frame,(right_Pos1,linePos_1),(right_Pos2, linePos_2),(9,5,2),1) 	
+		cv2.line(frame,(left_Pos1,linePos_1),(left_Pos2, linePos_2),(198,52,235),1)  
+		cv2.line(frame,(right_Pos1,linePos_1),(right_Pos2, linePos_2),(198,52,235),1) 	
 
 		# Forms a black cross that goes through the middle of the rectangular box 
 		cv2.line(frame,((center-20),int((linePos_1+linePos_2)/2)),((center+20),int((linePos_1+linePos_2)/2)),(0,0,0),1)
@@ -118,13 +98,16 @@ while(True):
 		#---------------------------------------------------------#
 		# Line Following Algorithm: 
 		#---------------------------------------------------------# 
-
-		#if center > (setCenter + findLineError):  
-			#SpiderG.walk('turnright')  
-		#elif center < (setCenter - findLineError): 	 
-			#SpiderG.walk('turnleft') 
-		#else: 
+		
+		if center > (setCenter + findLineError):  
+			SpiderG.walk('turnright')
+			#move.dove_move_tripod(2, 5, 'right')  
+		#elif center < (setCenter - findLineError): 
+			#SpiderG.walk('turnleft')    
+			#move.dove_move_tripod(2, 5, 'left')	   
+		#else:   
 			#SpiderG.walk('forward')  
+			#move.dove_move_tripod(2, 5, 'forward')  
 
 	except:   
 		center = None
@@ -138,9 +121,6 @@ while(True):
 	# Closes CV2 display by pressing the 'q' button (you may use any desired button of your choice)
 	if cv2.waitKey(1) & 0xFF == ord('q'):
 		break
-
-# Release Steady Camera Mode 
-SpiderG.steadyModeOff() 
 
 # After the loop release the capture object
 vid.release()
