@@ -13,7 +13,7 @@ from camera_opencv import Camera
 linePos_1 = 440
 linePos_2 = 380
 lineColorSet = 0	# 255 for white line and 0 for black line 
-findLineError = 10 
+findLineError = 40 
 setCenter = 320		
 
 colorUpper = np.array([44, 255, 255])
@@ -88,8 +88,8 @@ while(True):
 		cv2.line(frame,(0,linePos_2),(640,linePos_2),(255,255,64),1)
 		
 		# Forms a slope that connects the center coordinate for both the orange and blue vertical line
-		cv2.line(frame,(left_Pos1,linePos_1),(left_Pos2, linePos_2),(198,52,235),1)  
-		cv2.line(frame,(right_Pos1,linePos_1),(right_Pos2, linePos_2),(198,52,235),1) 	
+		cv2.line(frame,(left_Pos1,linePos_1),(left_Pos2, linePos_2),(198,52,235),1) 			# orange vertical line	 
+		cv2.line(frame,(right_Pos1,linePos_1),(right_Pos2, linePos_2),(198,52,235),1) 			# blue vertical line
 
 		# Forms a black cross that goes through the middle of the rectangular box 
 		cv2.line(frame,((center-20),int((linePos_1+linePos_2)/2)),((center+20),int((linePos_1+linePos_2)/2)),(0,0,0),1)
@@ -97,16 +97,18 @@ while(True):
 		
 		#---------------------------------------------------------#
 		# Line Following Algorithm: 
-		#---------------------------------------------------------# 
-		
-		if center > (setCenter + findLineError):  
-			SpiderG.walk('turnright')
+		#---------------------------------------------------------#  
+	
+		print (center) 
+
+		if center > (setCenter + findLineError): #(320 + 5)  
+			SpiderG.walk('turnleft') 
 			#move.dove_move_tripod(2, 5, 'right')  
-		#elif center < (setCenter - findLineError): 
-			#SpiderG.walk('turnleft')    
+		elif center < (setCenter - findLineError): # (320 -5)
+			SpiderG.walk('turnright')    
 			#move.dove_move_tripod(2, 5, 'left')	   
-		#else:   
-			#SpiderG.walk('forward')  
+		else:   
+			SpiderG.walk('forward')  
 			#move.dove_move_tripod(2, 5, 'forward')  
 
 	except:   
