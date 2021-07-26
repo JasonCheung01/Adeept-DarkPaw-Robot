@@ -17,22 +17,30 @@ while(True):
 	# Capture the video frame by frame
 	ret, frame = vid.read()   
 
-	# Convert to grayscale	
-	frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
+	# Binarization, filter out noise
+	#frame = np.where(frame < 100, 0, 255).astype(np.uint8) 
+
+	# Convert to grayscale	 
+	frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  
 
 	# Gaussian Blur (reduce image noise (brightness or color information) and details)	 
 	frame_blur = cv2.GaussianBlur(frame_gray,(5,5),0) 
-	
-	# Color Thresholding
-	ret, thresh = cv2.threshold(frame_blur, 60, 255, cv2.THRESH_BINARY_INV)  
 
-	# Finds all the contours of the frame and take the first contour
-	contours,hierarchy = cv2.findContours(thresh.copy(), 1, cv2.CHAIN_APPROX_NONE)  
-	cnt = contours [0]   
- 
-	# Draw a rectangle around the first contour of the frame
-	x,y,w,h = cv2.boundingRect(cnt)
-	cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),1) 
+	# Color Thresholding 
+	ret, thresh = cv2.threshold(frame_blur, 60, 255, cv2.THRESH_BINARY_INV)   
+
+	# Assuming there is only one contour conts[0]
+	contours,hierarchy = cv2.findContours(thresh.copy(), 1, cv2.CHAIN_APPROX_NONE) 
+	x, y, w, h = cv2.boundingRect(contours[0])  
+
+	# Draws a rectangle around the first contour of the frame 
+	frame = cv2.cvtColor(frame_gray, cv2.COLOR_GRAY2BGR)
+	cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 1)  
+	cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
+
+	# Draws our two line on the rectangle 
+	cv2.line(frame, (x, y + h // 3), (x + w, y + h // 3), (255,0,0), 1) 
+	cv2.line(frame, (x, y + h // 3 * 2), (x + w, y+ h // 3 * 2), (255,0,0), 1)	 
 
 	# Display the resulting frame on screen 
 	cv2.imshow('display', frame)  
