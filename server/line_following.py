@@ -25,10 +25,13 @@ while(True):
 	frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  
 
 	# Gaussian Blur (reduce image noise (brightness or color information) and details)	 
-	frame_blur = cv2.GaussianBlur(frame_gray,(5,5),0) 
+	frame_blur = cv2.GaussianBlur(frame_gray,(3,3),0) 
 
 	# Color Thresholding 
 	ret, thresh = cv2.threshold(frame_blur, 60, 255, cv2.THRESH_BINARY_INV)  
+	
+	# Erode image
+	#frame_findline = cv2.erode(thresh, None, iterations=6)  
 
 	try:
 		# Assuming there is only one contour conts[0] 
@@ -94,7 +97,7 @@ while(True):
 		# Calculate and draw the midpoint of the intersection point between our first horizontal line and the contour 
 		y1_x_mp = (y1_points[0][0] + y1_points[1][0]) // 2 
 		y1_y_mp = (y1_points[0][1] + y1_points[1][1]) // 2 
-		cv2.circle(frame, (y1_x_mp, y1_y_mp), 3, (127,0,63), 3)  
+		#cv2.circle(frame, (y1_x_mp, y1_y_mp), 3, (127,0,63), 3)  
 
 		# Draws the intersection point between our second horizontal line and the contour
 		y2_points = contour[contour[:,:,1] == y2] 
@@ -104,12 +107,25 @@ while(True):
 		# Calculate and draw the midpoint of the intersection point between our second horizontal line and the contour 
 		y2_x_mp = (y2_points[0][0] + y2_points[1][0]) // 2 
 		y2_y_mp = (y2_points[0][1] + y2_points[1][1]) // 2 
-		cv2.circle(frame, (y2_x_mp, y2_y_mp), 3, (127,0,63), 3) 
+		#cv2.circle(frame, (y2_x_mp, y2_y_mp), 3, (127,0,63), 3) 
 
 		# Calculate and draw the slope of the midpoint  
 		m = (y2_y_mp - y1_y_mp) / (y2_x_mp - y1_x_mp) 
-		cv2.line(frame, (y1_x_mp, y1_y_mp), (y2_x_mp, y2_y_mp), (127,0,63), 3) 			
-	except:	  
+		cv2.line(frame, (y1_x_mp, y1_y_mp), (y2_x_mp, y2_y_mp), (127,0,63), 3) 
+
+		# Display slope of the midpoint on screen 
+		cv2.putText(frame,('Slope: ' + str(m)), (30,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)   
+	
+		if (m > -50 and m < 50): 
+			SpiderG.walk('forward') 
+		#elif (m <= 5): 
+			#SpiderG.walk('turnleft') 
+		#else: 
+			#SpiderG.walk('turnright') 	
+	except: 
+		#m = 0	
+		SpiderG.move_init() 
+		SpiderG.servoStop()   
 		pass 		
  
 	# Display the resulting frame on screen 
