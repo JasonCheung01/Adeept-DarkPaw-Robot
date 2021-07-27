@@ -90,19 +90,25 @@ while(True):
 		y1_points = contour[contour[:,:,1] == y1] 
 		cv2.circle(frame, (y1_points[0][0], y1_points[0][1]), 3, (0,0,255), 3) 
 		cv2.circle(frame, (y1_points[1][0], y1_points[1][1]), 3, (0,0,255), 3) 
+		
+		# Calculate and draw the midpoint of the intersection point between our first horizontal line and the contour 
+		y1_x_mp = (y1_points[0][0] + y1_points[1][0]) // 2 
+		y1_y_mp = (y1_points[0][1] + y1_points[1][1]) // 2 
+		cv2.circle(frame, (y1_x_mp, y1_y_mp), 3, (127,0,63), 3)  
 
 		# Draws the intersection point between our second horizontal line and the contour
 		y2_points = contour[contour[:,:,1] == y2] 
 		cv2.circle(frame, (y2_points[0][0], y2_points[0][1]), 3, (0,0,255), 3) 
-		cv2.circle(frame, (y2_points[1][0], y2_points[1][1]), 3, (0,0,255), 3) 
+		cv2.circle(frame, (y2_points[1][0], y2_points[1][1]), 3, (0,0,255), 3)  
 
-		# Draws our slope connecting the intersection points
-		cv2.line(frame, (y1_points[0][0], y1_points[0][1]),(y2_points[0][0], y2_points[0][1]), (0,0,255), 2)
-		cv2.line(frame, (y1_points[1][0], y1_points[1][1]),(y2_points[1][0], y2_points[1][1]), (0,0,255), 2)	 
+		# Calculate and draw the midpoint of the intersection point between our second horizontal line and the contour 
+		y2_x_mp = (y2_points[0][0] + y2_points[1][0]) // 2 
+		y2_y_mp = (y2_points[0][1] + y2_points[1][1]) // 2 
+		cv2.circle(frame, (y2_x_mp, y2_y_mp), 3, (127,0,63), 3) 
 
-		# Calculate the slope connecting the interesction points 
-			
-
+		# Calculate and draw the slope of the midpoint  
+		m = (y2_y_mp - y1_y_mp) / (y2_x_mp - y1_x_mp) 
+		cv2.line(frame, (y1_x_mp, y1_y_mp), (y2_x_mp, y2_y_mp), (127,0,63), 3) 			
 	except:	  
 		pass 		
  
