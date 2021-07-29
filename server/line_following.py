@@ -20,7 +20,7 @@ while(True):
 
 	# Binarization, filter out noise
 	#frame = np.where(frame < 100, 0, 255).astype(np.uint8) 
-
+	
 	# Convert to grayscale	 
 	frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  
 
@@ -35,22 +35,25 @@ while(True):
 
 	try:
 		# Assuming there is only one contour conts[0] 
-		contours,hierarchy = cv2.findContours(thresh.copy(), 1, cv2.CHAIN_APPROX_NONE) 
-		x, y, w, h = cv2.boundingRect(contours[0])  
+		contours,hierarchy = cv2.findContours(thresh.copy(),1, cv2.CHAIN_APPROX_NONE) 
+		C = None
 
-		# Draws a rectangle around the first contour of the frame 
-		frame = cv2.cvtColor(frame_gray, cv2.COLOR_GRAY2BGR) 
-		cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 1)  
-		cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
+		if len(contours) > 0: 
+			C = max(contours, key = cv2.contourArea)   
+			x, y, w, h = cv2.boundingRect(C)  	 
 
-		# Draws our two line on the rectangle 
-		cv2.line(frame, (x, y + h // 3), (x + w, y + h // 3), (255,0,0), 1)  
-		cv2.line(frame, (x, y + h // 3 * 2), (x + w, y + h // 3 * 2), (255,0,0), 1)	
- 
-		#points = []  
-		y1 = y + h // 3 
-		y2 = y + h // 3 * 2   
-		contour = contours[0] 
+			frame = cv2.cvtColor(frame_gray, cv2.COLOR_GRAY2BGR)  
+			cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 1) 
+			cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
+
+			# Draws our two line on the rectangle 
+			cv2.line(frame, (x, y + h // 3), (x + w, y + h // 3), (255,0,0), 1)  
+			cv2.line(frame, (x, y + h // 3 * 2), (x + w, y + h // 3 * 2), (255,0,0), 1)	
+	 
+			#points = []  
+			y1 = y + h // 3 
+			y2 = y + h // 3 * 2   
+			contour = C 
 
 		#----------------------------------------------------------------#
 		# Initial Method for interestction of line and contour: 
@@ -89,39 +92,41 @@ while(True):
  
 		#----------------------------------------------------------------#  
 
-		# Draws the intersection point between our first horizontal line and the contour
-		y1_points = contour[contour[:,:,1] == y1] 
-		cv2.circle(frame, (y1_points[0][0], y1_points[0][1]), 3, (0,0,255), 3) 
-		cv2.circle(frame, (y1_points[1][0], y1_points[1][1]), 3, (0,0,255), 3) 
+			# Draws the intersection point between our first horizontal line and the contour
+			y1_points = contour[contour[:,:,1] == y1] 
+			cv2.circle(frame, (y1_points[0][0], y1_points[0][1]), 3, (0,0,255), 3) 
+			cv2.circle(frame, (y1_points[1][0], y1_points[1][1]), 3, (0,0,255), 3) 
 		
-		# Calculate and draw the midpoint of the intersection point between our first horizontal line and the contour 
-		y1_x_mp = (y1_points[0][0] + y1_points[1][0]) // 2 
-		y1_y_mp = (y1_points[0][1] + y1_points[1][1]) // 2 
-		#cv2.circle(frame, (y1_x_mp, y1_y_mp), 3, (127,0,63), 3)  
+			# Calculate and draw the midpoint of the intersection point between our first horizontal line and the contour 
+			y1_x_mp = (y1_points[0][0] + y1_points[1][0]) // 2 
+			y1_y_mp = (y1_points[0][1] + y1_points[1][1]) // 2 
+			#cv2.circle(frame, (y1_x_mp, y1_y_mp), 3, (127,0,63), 3)  
 
-		# Draws the intersection point between our second horizontal line and the contour
-		y2_points = contour[contour[:,:,1] == y2] 
-		cv2.circle(frame, (y2_points[0][0], y2_points[0][1]), 3, (0,0,255), 3) 
-		cv2.circle(frame, (y2_points[1][0], y2_points[1][1]), 3, (0,0,255), 3)  
+			# Draws the intersection point between our second horizontal line and the contour
+			y2_points = contour[contour[:,:,1] == y2] 
+			cv2.circle(frame, (y2_points[0][0], y2_points[0][1]), 3, (0,0,255), 3) 
+			cv2.circle(frame, (y2_points[1][0], y2_points[1][1]), 3, (0,0,255), 3)  
 
-		# Calculate and draw the midpoint of the intersection point between our second horizontal line and the contour 
-		y2_x_mp = (y2_points[0][0] + y2_points[1][0]) // 2 
-		y2_y_mp = (y2_points[0][1] + y2_points[1][1]) // 2 
-		#cv2.circle(frame, (y2_x_mp, y2_y_mp), 3, (127,0,63), 3) 
+			# Calculate and draw the midpoint of the intersection point between our second horizontal line and the contour 
+			y2_x_mp = (y2_points[0][0] + y2_points[1][0]) // 2 
+			y2_y_mp = (y2_points[0][1] + y2_points[1][1]) // 2 
+			#cv2.circle(frame, (y2_x_mp, y2_y_mp), 3, (127,0,63), 3) 
 
-		# Calculate and draw the slope of the midpoint  
-		m = (y2_y_mp - y1_y_mp) / (y2_x_mp - y1_x_mp) 
-		cv2.line(frame, (y1_x_mp, y1_y_mp), (y2_x_mp, y2_y_mp), (127,0,63), 3) 
+			# Calculate and draw the slope of the midpoint  
+			m = (y2_y_mp - y1_y_mp) / (y2_x_mp - y1_x_mp) 
+			cv2.line(frame, (y1_x_mp, y1_y_mp), (y2_x_mp, y2_y_mp), (127,0,63), 3) 
 
-		# Display slope of the midpoint on screen 
-		cv2.putText(frame,('Slope: ' + str(m)), (30,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)   
-	
-		if (m > -50 and m < 50): 
-			SpiderG.walk('forward') 
-		#elif (m <= 5): 
-			#SpiderG.walk('turnleft') 
-		#else: 
-			#SpiderG.walk('turnright') 	
+			# Display slope of the midpoint on screen 
+			cv2.putText(frame,('Slope: ' + str(m)), (30,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)   
+		
+			#if (m >= -20 and m <= 0): 
+				#SpiderG.walk('forward') 
+
+			#if ( 
+			#elif (m > -3): 
+				#SpiderG.walk('turnright') 
+			#else: 
+				#SpiderG.walk('turnleft') 	
 	except: 
 		#m = 0	
 		SpiderG.move_init() 
