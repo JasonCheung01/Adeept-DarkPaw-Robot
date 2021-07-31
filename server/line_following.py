@@ -3,7 +3,9 @@ import cv2
 import numpy as np 
 import move		
 import Kalman_filter  
-import SpiderG	
+import SpiderG	 
+import math 
+import time
 
 SpiderG.move_init()   
 from skimage.draw import line 
@@ -13,6 +15,11 @@ from camera_opencv import Camera
 
 # Video capture initialization
 vid = cv2.VideoCapture(Camera.video_source)
+
+# Initialization of variables  
+queue = []  
+queue_size = 10 
+
 
 while(True): 
 	# Capture the video frame by frame
@@ -42,17 +49,17 @@ while(True):
 	
 	# Erode image
 	#frame_findline = cv2.erode(thresh, None, iterations=6)  
-
-	try:
-		# Assuming there is only one contour conts[0] 
-		contours,hierarchy = cv2.findContours(thresh.copy(),1, cv2.CHAIN_APPROX_NONE) 
-		C = None
+	
+	try:  
+		# Assuming there is only one contour conts[0]
+		contours,hierarchy = cv2.findContours(thresh.copy(),1, cv2.CHAIN_APPROX_NONE)
+		C = None 
 
 		if len(contours) > 0: 
 			C = max(contours, key = cv2.contourArea)   
 			x, y, w, h = cv2.boundingRect(C)  	 
 
-			frame = cv2.cvtColor(frame_gray, cv2.COLOR_GRAY2BGR)  
+			frame = cv2.cvtColor(frame_gray, cv2.COLOR_GRAY2BGR) 
 			cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 1) 
 			cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
 
@@ -129,18 +136,41 @@ while(True):
 			# Display slope of the midpoint on screen 
 			cv2.putText(frame,('Slope: ' + str(m)), (30,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)   
 		
-			#if (m >= -20 and m <= 0): 
-				#SpiderG.walk('forward') 
+			# Add slope into our queue
+			#queue.append(m)
 
-			#if ( 
-			#elif (m > -3): 
-				#SpiderG.walk('turnright') 
-			#else: 
-				#SpiderG.walk('turnleft') 	
-	except: 
-		#m = 0	
-		SpiderG.move_init() 
-		SpiderG.servoStop()   
+			# Do not execute the rest of the code below until queue size is full  
+			#if (len(queue) <= queue_size):  
+				#continue 
+ 
+			# After that, we’re going to use the oldest slope of the queue to make our decision 
+			#m = queue.pop(0)    
+ 
+			if (abs(m) < 2):  
+				# Add slope into our queue 
+				queue.append(m)
+
+				# Do not execute the rest of the code below until queue size is full 
+				if (len(queue) <= queue_size): 
+					continue
+ 
+				# After that, we’re going to use the oldest slope of the queue to make our decision
+				m = queue.pop(0) 
+  
+				if m > 0:  
+					SpiderG.walk('turnleft') 
+ 
+				if m < 0:   
+					SpiderG.walk('turnright')  
+
+			else: 
+				SpiderG.walk('forward')  
+
+		# else if there is no contour, stop the robot 	
+		else:    
+			SpiderG.move_init()
+			SpiderG.servoStop()  	
+	except: 	   
 		pass 		
  
 	# Display the resulting frame on screen 
@@ -148,7 +178,7 @@ while(True):
 
 	# Closes CV2 display by pressing the 'q' button (you may use any desired button of your choice)
 	if cv2.waitKey(1) & 0xFF == ord('q'): 
-		break
+		break 
 
 # After the loop release the capture object
 vid.release()
