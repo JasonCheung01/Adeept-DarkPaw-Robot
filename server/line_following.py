@@ -18,8 +18,7 @@ vid = cv2.VideoCapture(Camera.video_source)
 
 # Initialization of variables  
 queue = []  
-queue_size = 10 
-
+queue_size = 10
 
 while(True): 
 	# Capture the video frame by frame
@@ -66,48 +65,10 @@ while(True):
 			# Draws our two line on the rectangle 
 			cv2.line(frame, (x, y + h // 3), (x + w, y + h // 3), (255,0,0), 1)  
 			cv2.line(frame, (x, y + h // 3 * 2), (x + w, y + h // 3 * 2), (255,0,0), 1)	
-	 
-			#points = []  
+	  
 			y1 = y + h // 3 
 			y2 = y + h // 3 * 2   
 			contour = C 
-
-		#----------------------------------------------------------------#
-		# Initial Method for interestction of line and contour: 
-		#----------------------------------------------------------------#
-
-		# appends the intersection point between lines and contours to a list  
-		# for y in (y1,y2):  
-			#points.append(contour[contour[:,:,1] == y])  
-			#test = contour[contour[:,:,1] == y]  
-			#print(test) 
-
-		#y1_x1 = points[0][0][0]
-                #y1_x2 = points[0][1][0]
-                #y2_x1 = points[1][0][0]
-                #y2_x2 = points[1][1][0]
-
-                #x1 = (y1_x1 + y1_x2)/2
-                #x2 = (y2_x1 + y2_x2)/2
-
-                #m = (y2-y1)/(x2-x1)
-
-                #cv2.line(img, (x1,y1), (x2,y2), (255, 255, 0), 1)
-
-                #draws the intersection point between lines and contours from the list
-                #for x in points:   
-                        #coordinates = tuple(x) 
-                        #print(x[0][0])
-                        #print("hello") 
-                        #print(x[0][1]) 
-                        #print(x)
-                        #print("-----------")
-                        #cv2.circle(frame, (x[0][0], x[0][1]), 3, (0,0,255), 3) # draws the two circle on the left
-                        #cv2.circle(frame, (x[1][0], x[1][1]), 3, (0,0,255), 3) # draws the two circle on the right
-                        #cv2.line(frame, (x[0][0], x[1][1]),(x[0][1], x[1][0]), (0,0,255), 2)
-                        #cv2.line(frame, (x[1][0]), (x[1][1]), (0,0,255), 2)
- 
-		#----------------------------------------------------------------#  
 
 			# Draws the intersection point between our first horizontal line and the contour
 			y1_points = contour[contour[:,:,1] == y1] 
@@ -135,36 +96,26 @@ while(True):
 
 			# Display slope of the midpoint on screen 
 			cv2.putText(frame,('Slope: ' + str(m)), (30,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)   
-		
-			# Add slope into our queue
-			#queue.append(m)
-
-			# Do not execute the rest of the code below until queue size is full  
-			#if (len(queue) <= queue_size):  
-				#continue 
- 
-			# After that, we’re going to use the oldest slope of the queue to make our decision 
-			#m = queue.pop(0)    
- 
-			if (abs(m) < 2):  
+		    
+			#if (abs(m) < 2):  
 				# Add slope into our queue 
-				queue.append(m)
+				#queue.append(m)
 
 				# Do not execute the rest of the code below until queue size is full 
-				if (len(queue) <= queue_size): 
-					continue
+				#if (len(queue) <= queue_size): 
+					#continue
  
 				# After that, we’re going to use the oldest slope of the queue to make our decision
-				m = queue.pop(0) 
+				#m = queue.pop(0) 
   
-				if m > 0:  
-					SpiderG.walk('turnleft') 
+				#if m > 0:  
+					#SpiderG.walk('turnleft') 
  
-				if m < 0:   
-					SpiderG.walk('turnright')  
+				#if m < 0:   
+					#SpiderG.walk('turnright')  
 
-			else: 
-				SpiderG.walk('forward')  
+			#else: 
+				#SpiderG.walk('forward')  
 
 		# else if there is no contour, stop the robot 	
 		else:    
