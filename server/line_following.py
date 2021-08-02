@@ -23,9 +23,6 @@ queue_size = 10
 while(True): 
 	# Capture the video frame by frame
 	ret, frame = vid.read()   
-
-	# Binarization, filter out noise
-	#frame = np.where(frame < 100, 0, 255).astype(np.uint8) 
 	
 	# Adjust brightness of video frame	
 	cols, rows = frame.shape[-2:] 
@@ -35,7 +32,6 @@ while(True):
 	ratio = brightness / minimum_brightness 
 	
 	bright_img = cv2.convertScaleAbs(frame, alpha = 1 / ratio, beta = 0)
-	#bright_img = cv2.convertScaleAbs(frame, alpha = 1, beta = 255 * (minimum_brightness - brightness))
 
 	# Convert to grayscale	 
 	frame_gray = cv2.cvtColor(bright_img, cv2.COLOR_BGR2GRAY) 
@@ -45,9 +41,6 @@ while(True):
 
 	# Color Thresholding 
 	ret, thresh = cv2.threshold(frame_blur, 50, 255, cv2.THRESH_BINARY_INV)  
-	
-	# Erode image
-	#frame_findline = cv2.erode(thresh, None, iterations=6)  
 	
 	try:  
 		# Assuming there is only one contour conts[0]
