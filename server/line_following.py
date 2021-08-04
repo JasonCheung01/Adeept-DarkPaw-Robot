@@ -13,27 +13,35 @@ from base_camera import BaseCamera
 from camera_opencv import CVThread
 from camera_opencv import Camera
 
+#---------------------------------------# 
+# List of our Functions: 
+#---------------------------------------#
+
+# adjust brightness of video frame
+def brightness_adjustment(input, min_brightness): 
+	cols, rows = input.shape[-2:]
+
+	brightness = np.sum(input) / (255 * cols * rows)
+	ratio = brightness / min_brightness
+
+	return ratio
+          
+#---------------------------------------# 
+# Main Program: 
+#---------------------------------------# 
+
 # Video capture initialization
 vid = cv2.VideoCapture(Camera.video_source)
 
-# Initialization of variables  
-queue = []  
-queue_size = 10
+# Variable Initialization
+count_backward = 0
 
 while(True): 
 	# Capture the video frame by frame
 	ret, frame = vid.read()   
 	
-	# Resize of frame window
-	#frame = cv2.resize(frame, (700,540)) 
-	
 	# Adjust brightness of video frame	
-	cols, rows = frame.shape[-2:] 
-	brightness = np.sum(frame) / (255 * cols * rows)
-	 
-	minimum_brightness = 150 
-	ratio = brightness / minimum_brightness 
-	
+	ratio = brightness_adjustment(frame, 150)	
 	bright_img = cv2.convertScaleAbs(frame, alpha = 1 / ratio, beta = 0)
 
 	# Convert to grayscale	 
@@ -65,6 +73,8 @@ while(True):
 			y1 = y + h // 3 
 			y2 = y + h // 3 * 2   
 			contour = C 
+
+			count_backward = 0
 
 			# Draws the intersection point between our first horizontal line and the contour
 			y1_points = contour[contour[:,:,1] == y1] 
@@ -104,57 +114,37 @@ while(True):
 			# Display alignment error on screen  
 			cv2.putText(frame,('Alignment Error: ' + str(alignment_error)), (30,80), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA) 
 
-			# alignment is off and slope is off 
-			if (abs(m) < 3 and abs(alignment_error) > 12): 
-				if (m > 0):  
-					# m is + && a is + (slope to left and line on right)
-					if (alignment_error > 0): 
-						cv2.putText(frame,('Walking Forward 1'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
+			if (abs(m) < 2 or abs(alignment_error) > 160): 
+				if (m > 0): 
+					if (alignment_error > 0):  
+						cv2.putText(frame,('Walking forward 1'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
 						#SpiderG.walk('forward') 
-					
-					# m is + && a is - (slope to left and line on left)
-					else:  
-						cv2.putText(frame,('Turning Left'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
-						#SpiderG.walk('turnleft') 
-
-				else: 
-					cv2.putText(frame,('Turning Right 1'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
-                                        #SpiderG.walk('turnright')
-			else:   
-				# m is - && a is + (slope to right and line on right)
-				if (alignment_error > 0):  
-					cv2.putText(frame,('Turning Right 2'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
-					#SpiderG.walk('turnright')  
-					
-				# m is - && a is - (slope to right and line on left)
+					else: 
+						cv2.putText(frame,('Turning Left'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)  
+						#SpiderG.walk('turnleft')  
+	
 				else:  
-					cv2.putText(frame,('Walking Forward 2'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
-					#SpiderG.walk('forward')  
-					
-			#if (abs(m) < 2):  
-				# Add slope into our queue 
-				#queue.append(m)
+					if (alignment_error > 0): 
+						cv2.putText(frame,('Turning Right'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA) 
+						#SpiderG.walk('turnright') 
 
-				# Do not execute the rest of the code below until queue size is full 
-				#if (len(queue) <= queue_size): 
-					#continue
- 
-				# After that, we’re going to use the oldest slope of the queue to make our decision
-				#m = queue.pop(0) 
-  
-				#if m > 0:  
-					#SpiderG.walk('turnleft') 
- 
-				#if m < 0:   
-					#SpiderG.walk('turnright')  
+					else: 
+						cv2.putText(frame,('Walking Forward 2'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA) 
+						#SpiderG.walk('forward')  
 
-			#else: 
-				#SpiderG.walk('forward')  
+			else:  
+				cv2.putText(frame,('Walking Forward 3'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
+				#SpiderG.walk('forward') 
 
 		# else if there is no contour, stop the robot 	
-		else:    
-			SpiderG.move_init()
-			SpiderG.servoStop()  	
+		else:
+			if (count_backward < 100):
+				count_backward = count_backward+1
+				cv2.putText(frame,('Walking Backward (count: '+str(count_backward)+')'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
+				#SpiderG.walk('backward')
+			else:
+				SpiderG.move_init()
+				SpiderG.servoStop()  	
 	except: 	   
 		pass 		
  
@@ -170,4 +160,5 @@ vid.release()
 
 # Destroy all the windows
 cv2.destroyAllWindows()
+
 
