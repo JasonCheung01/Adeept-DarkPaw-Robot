@@ -1,14 +1,9 @@
 import os
 import cv2	
-import numpy as np 
-import move		
-import Kalman_filter  
-import SpiderG	 
-import math 
-import time
+import numpy as np  
+import SpiderG	
 
 SpiderG.move_init()   
-from skimage.draw import line 
 from base_camera import BaseCamera 
 from camera_opencv import CVThread
 from camera_opencv import Camera
@@ -33,30 +28,29 @@ def midpoint(val1, val2):
 	return midpoint 
 
 # Controls robot movement for line following 
-def line_following(slope, alignment_error, val1, val2):  
+def line_following(input, slope, alignment_error, val1, val2):  
 	if (abs(slope) < val1 or abs(alignment_error) > val2):
 		if (m > 0):
 			if (alignment_error > 0):
-				cv2.putText(frame,('Walking forward 1'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
+				cv2.putText(input,('Walking forward 1'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
 				SpiderG.walk('forward')
 			else:
-				cv2.putText(frame,('Turning Left'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
+				cv2.putText(input,('Turning Left'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
 				SpiderG.walk('turnleft')
 
 		else:
 			if (alignment_error > 0):
-				cv2.putText(frame,('Turning Right'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
+				cv2.putText(input,('Turning Right'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
 				SpiderG.walk('turnright')
 
 			else:
-				cv2.putText(frame,('Walking Forward 2'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
+				cv2.putText(input,('Walking Forward 2'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
 				SpiderG.walk('forward')
 
 	else:
-		cv2.putText(frame,('Walking Forward 3'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
+		cv2.putText(input,('Walking Forward 3'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
 		SpiderG.walk('forward') 
 
-          
 #---------------------------------------# 
 # Main Program: 
 #---------------------------------------# 
@@ -69,17 +63,16 @@ count_backward = 0
 
 while(True): 
 	# Capture the video frame by frame
-	ret, frame = vid.read()   
+	ret, frame = vid.read()     
 	
 	# Adjust brightness of video frame	
-	ratio = brightness_adjustment(frame, 150)	
-	bright_img = cv2.convertScaleAbs(frame, alpha = 1 / ratio, beta = 0)
-
-	# Convert to grayscale	 
-	frame_gray = cv2.cvtColor(bright_img, cv2.COLOR_BGR2GRAY) 
+	bright_img = cv2.convertScaleAbs(frame, alpha = 1 / (brightness_adjustment(frame, 150)), beta = 0) 
+	
+	# Convert to grayscale	  
+	frame_gray = cv2.cvtColor(bright_img, cv2.COLOR_BGR2GRAY)   
 
 	# Gaussian Blur (reduce image noise (brightness or color information) and details)	 
-	frame_blur = cv2.GaussianBlur(frame_gray,(3,3),0) 
+	frame_blur = cv2.GaussianBlur(frame_gray,(3,3),0)  
 
 	# Color Thresholding 
 	ret, thresh = cv2.threshold(frame_blur, 50, 255, cv2.THRESH_BINARY_INV)   
@@ -89,7 +82,20 @@ while(True):
 		contours,hierarchy = cv2.findContours(thresh.copy(),1, cv2.CHAIN_APPROX_NONE)
 		C = None  
 
-		# Finds the buggest existing contour
+		# Once it finds the contour, we will elliminate all contour that is smaller than a certain size  
+		for i in contours:   
+			area = cv2.contourArea(i)    
+
+			if (area < 50): 
+				# create a mask from the contour by drawing the contour and taking the bitwise "not"   
+				mask = np.zeros(i.shape, dtype = "uint8")    
+				mask = cv2.drawContours(mask, [i] , -1, 0, 1)   
+				mask = cv2.bitwise_not(mask) 
+
+				# apply the mask to the original image using a bitwise "and" 
+				cv2.bitwise_and(frame, frame, mask=mask)
+
+		# Finds the biggest existing contour
 		if len(contours) > 0: 
 			C = max(contours, key = cv2.contourArea)   
 			x, y, w, h = cv2.boundingRect(C)  	 
@@ -142,7 +148,7 @@ while(True):
 			cv2.putText(frame,('Alignment Error: ' + str(alignment_error)), (30,80), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)  
 
 			# Controls line Following Movements
-			line_following(m,alignment_error,2,160)	 
+			#line_following(frame,m,alignment_error,2,160)	 
 
 			count_backward = 0 
 
@@ -151,15 +157,18 @@ while(True):
 			if (count_backward < 100): 
 				count_backward += 1
 				cv2.putText(frame,('Walking Backward (count: '+str(count_backward)+')'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA) 
-				SpiderG.walk('backward')
+				#SpiderG.walk('backward')
 			else:
 				SpiderG.move_init()
 				SpiderG.servoStop()  	
 	except: 	   
 		pass 		
  
-	# Display the resulting frame on screen 
-	cv2.imshow('display', frame)  
+	# Display the resulting frame on screen  
+	#cv2.imshow('display', frame)  
+	#cv2.imshow('blur', frame_blur) 
+	#cv2.imshow('thresh', thresh) 
+	#cv2.imshow('gray', frame) 
 
 	# Closes CV2 display by pressing the 'q' button (you may use any desired button of your choice)
 	if cv2.waitKey(1) & 0xFF == ord('q'): 
