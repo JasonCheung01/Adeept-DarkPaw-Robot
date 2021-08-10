@@ -21,11 +21,19 @@ def brightness_adjustment(input, min_brightness):
 
 	return ratio
 
-# calculates midpoint 
-def midpoint(val1, val2): 
-	midpoint = (val1 + val2) // 2 
+# elliminates contour that is smaller than a certain size 
+def contours_ellimination(list, area_size): 
+	contours_update = []
 
-	return midpoint 
+	# Once it finds the contour, we will elliminate all contour that is smaller than a certain size 
+	for i in list: 
+		area = cv2.contourArea(i) 
+
+		if (area > area_size): 
+			contours_update.append(i)
+
+	return contours_update
+
 
 # Controls robot movement for line following 
 def line_following(input, slope, alignment_error, val1, val2):  
@@ -51,6 +59,12 @@ def line_following(input, slope, alignment_error, val1, val2):
 		cv2.putText(input,('Walking Forward 3'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)
 		SpiderG.walk('forward') 
 
+# calculates midpoint
+def midpoint(val1, val2):
+        midpoint = (val1 + val2) // 2
+
+        return midpoint 
+
 #---------------------------------------# 
 # Main Program: 
 #---------------------------------------# 
@@ -59,7 +73,10 @@ def line_following(input, slope, alignment_error, val1, val2):
 vid = cv2.VideoCapture(Camera.video_source)
 
 # Variable Initialization
-count_backward = 0
+count_backward = 0 
+
+# Video Recording Initialization 
+#video_capture = cv2.VideoWriter('adeept_line_following.avi', -1 , 30, (640,480))
 
 while(True): 
 	# Capture the video frame by frame
@@ -75,35 +92,25 @@ while(True):
 	frame_blur = cv2.GaussianBlur(frame_gray,(3,3),0)  
 
 	# Color Thresholding 
-	ret, thresh = cv2.threshold(frame_blur, 50, 255, cv2.THRESH_BINARY_INV)   
+	ret, thresh = cv2.threshold(frame_blur, 55, 255, cv2.THRESH_BINARY_INV)   
 	
 	try:  
 		# Finds our contour
 		contours,hierarchy = cv2.findContours(thresh.copy(),1, cv2.CHAIN_APPROX_NONE)
-		C = None  
-
-		# Once it finds the contour, we will elliminate all contour that is smaller than a certain size  
-		for i in contours:   
-			area = cv2.contourArea(i)    
-
-			if (area < 50): 
-				# create a mask from the contour by drawing the contour and taking the bitwise "not"   
-				mask = np.zeros(i.shape, dtype = "uint8")    
-				mask = cv2.drawContours(mask, [i] , -1, 0, 1)   
-				mask = cv2.bitwise_not(mask) 
-
-				# apply the mask to the original image using a bitwise "and" 
-				cv2.bitwise_and(frame, frame, mask=mask)
+		C = None   
+	  
+		# Elliminate contours smaller than a certain size 
+		contours_update = contours_ellimination(contours,500) 
 
 		# Finds the biggest existing contour
-		if len(contours) > 0: 
-			C = max(contours, key = cv2.contourArea)   
+		if len(contours_update) > 0: 
+			C = max(contours_update, key = cv2.contourArea)   
 			x, y, w, h = cv2.boundingRect(C)  	 
 
 			# Draws bounding rectangle box on biggest contour
 			frame = cv2.cvtColor(frame_gray, cv2.COLOR_GRAY2BGR) 
 			cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 1) 
-			cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
+			cv2.drawContours(frame, contours_update, -1, (0, 255, 0), 1)
 
 			# Draws our two horizontal line on the bounding rectangle box 
 			cv2.line(frame, (x, y + h // 3), (x + w, y + h // 3), (255,0,0), 1)  
@@ -148,7 +155,7 @@ while(True):
 			cv2.putText(frame,('Alignment Error: ' + str(alignment_error)), (30,80), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA)  
 
 			# Controls line Following Movements
-			#line_following(frame,m,alignment_error,2,160)	 
+			line_following(frame,m,alignment_error,2,160)	 
 
 			count_backward = 0 
 
@@ -157,7 +164,7 @@ while(True):
 			if (count_backward < 100): 
 				count_backward += 1
 				cv2.putText(frame,('Walking Backward (count: '+str(count_backward)+')'), (30,110), cv2.FONT_HERSHEY_SIMPLEX, 0.5,(128,255,128), 1, cv2.LINE_AA) 
-				#SpiderG.walk('backward')
+				SpiderG.walk('backward')
 			else:
 				SpiderG.move_init()
 				SpiderG.servoStop()  	
@@ -165,17 +172,18 @@ while(True):
 		pass 		
  
 	# Display the resulting frame on screen  
-	#cv2.imshow('display', frame)  
-	#cv2.imshow('blur', frame_blur) 
-	#cv2.imshow('thresh', thresh) 
-	#cv2.imshow('gray', frame) 
+	cv2.imshow('display', frame) 
+
+	#video_capture.write(frame)    
 
 	# Closes CV2 display by pressing the 'q' button (you may use any desired button of your choice)
 	if cv2.waitKey(1) & 0xFF == ord('q'): 
 		break 
 
 # After the loop release the capture object
-vid.release()
+vid.release() 
+
+#video_capture.release()
 
 # Destroy all the windows
 cv2.destroyAllWindows()
